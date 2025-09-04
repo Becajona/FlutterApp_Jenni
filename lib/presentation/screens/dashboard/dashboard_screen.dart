@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/budget_controller.dart';
+import '../../../domain/services/budget_calculator.dart';
+
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -29,7 +31,7 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Map<String, String> _formatResult(result) {
+  Map<String, String> _formatResult(BudgetResult? result) {
     if (result == null) {
       return {
         'Ingreso quincenal': '--',
@@ -40,8 +42,8 @@ class DashboardScreen extends StatelessWidget {
         'Ahorro anual': '--',
       };
     }
-    String f(num n) =>
-        '\$ ${n.toStringAsFixed(2)}';
+
+    String f(num n) => '\$ ${n.toStringAsFixed(2)}';
 
     return {
       'Ingreso quincenal': f(result.ingresoQ),
@@ -67,8 +69,10 @@ class _SummaryCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            Text('Resumen de quincena',
-                style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Resumen de quincena',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 12),
             ...items.map((e) => _RowItem(label: e.key, value: e.value)),
           ],

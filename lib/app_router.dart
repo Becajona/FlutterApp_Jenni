@@ -9,6 +9,7 @@ import '../screens/splash_screen.dart';
 import '../presentation/screens/onboarding/start_screen.dart';
 import '../presentation/screens/onboarding/income_screen.dart';
 import '../presentation/screens/onboarding/emergency_screen.dart'; // nuevo
+import '../presentation/screens/expenses/expenses_crud_screen.dart'; // nuevo
 
 
 Listenable _mergeListenable(List<Listenable> list) => Listenable.merge(list);
@@ -26,6 +27,7 @@ GoRouter createRouter(AuthRepository auth, BudgetController budget) => GoRouter(
     // Home
     GoRoute(path: '/home', builder: (c, s) => const HomeScreen()),
     GoRoute(path: '/onb/emergency', builder: (c, s) => const EmergencyScreen()),
+    GoRoute(path: '/expenses', builder: (c, s) => const ExpensesCrudScreen()),
 
   ],
   redirect: (context, state) {

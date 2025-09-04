@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
+
 import '../auth/auth_repository.dart';
 import '../presentation/screens/dashboard/dashboard_screen.dart';
 
@@ -9,18 +11,26 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthRepository>();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inicio'),
         actions: [
+          // Ir a "Gastos fijos" con go_router
           IconButton(
-            onPressed: auth.signOut,
-            icon: const Icon(Icons.logout),
+            tooltip: 'Gastos fijos',
+            icon: const Icon(Icons.list_alt),
+            onPressed: () => context.push('/expenses'), // o context.go('/expenses')
+          ),
+          // Cerrar sesión
+          IconButton(
             tooltip: 'Cerrar sesión',
+            icon: const Icon(Icons.logout),
+            onPressed: auth.signOut,
           ),
         ],
       ),
-      body: const DashboardScreen(),
+      body: const DashboardScreen(), // mantiene el panel
     );
   }
 }
