@@ -27,6 +27,12 @@ class HomeScreen extends StatelessWidget {
             icon: const Icon(Icons.settings),
             onPressed: () => context.push('/settings'),
           ),
+          IconButton(
+            tooltip: 'Simulador',
+            icon: const Icon(Icons.auto_graph),
+            onPressed: () => context.push('/simulator'),
+          ),
+
           
           IconButton(
             tooltip: 'Cerrar sesión',

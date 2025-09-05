@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../../money/enums.dart';
 import '../../controllers/budget_controller.dart';
 import '../../../domain/entities/expense.dart';
+import '../../../money/utils/formatters.dart';
 
 class ExpensesCrudScreen extends StatelessWidget {
   const ExpensesCrudScreen({super.key});
@@ -23,7 +24,7 @@ class ExpensesCrudScreen extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Center(
               child: Text(
-                'Total Q: \$${ctrl.totalExpensesQuincena.toStringAsFixed(2)}',
+                'Total Q: ${MoneyFmt.mx(ctrl.totalExpensesQuincena)}',
                 style: const TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -55,7 +56,7 @@ class ExpensesCrudScreen extends StatelessWidget {
             title: Text(e.name),
             subtitle: Text(
               '${e.category} • ${_frecText(e.frequency)} • '
-              'Base: \$${e.amount.toStringAsFixed(2)} | Q: \$${q.toStringAsFixed(2)}'
+              'Base: ${MoneyFmt.mx(e.amount)} | Q: ${MoneyFmt.mx(q)}'
               '${e.note != null && e.note!.isNotEmpty ? '\n${e.note}' : ''}',
             ),
             isThreeLine: e.note != null && e.note!.isNotEmpty,
@@ -124,7 +125,7 @@ class ExpensesCrudScreen extends StatelessWidget {
 
 class ExpenseDialog extends StatefulWidget {
   final Expense? expense;
-  ExpenseDialog({super.key, this.expense});
+  const ExpenseDialog({super.key, this.expense});
 
   @override
   State<ExpenseDialog> createState() => _ExpenseDialogState();

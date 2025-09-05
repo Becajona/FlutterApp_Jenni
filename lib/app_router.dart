@@ -11,6 +11,7 @@ import '../presentation/screens/onboarding/income_screen.dart';
 import '../presentation/screens/onboarding/emergency_screen.dart'; 
 import '../presentation/screens/expenses/expenses_crud_screen.dart'; 
 import '../presentation/screens/settings/settings_screen.dart';
+import '../presentation/screens/simulator/simulator_screen.dart';
 
 
 
@@ -31,6 +32,7 @@ GoRouter createRouter(AuthRepository auth, BudgetController budget) => GoRouter(
     GoRoute(path: '/onb/emergency', builder: (c, s) => const EmergencyScreen()),
     GoRoute(path: '/expenses', builder: (c, s) => const ExpensesCrudScreen()),
     GoRoute(path: '/settings', builder: (c, s) => const SettingsScreen()),
+    GoRoute(path: '/simulator', builder: (c, s) => const SimulatorScreen()),
 
 
   ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../controllers/budget_controller.dart';
 import '../../../domain/services/budget_calculator.dart';
+import '../../../money/utils/formatters.dart';
 
 
 class DashboardScreen extends StatelessWidget {
@@ -32,28 +33,30 @@ class DashboardScreen extends StatelessWidget {
   }
 
   Map<String, String> _formatResult(BudgetResult? result) {
-    if (result == null) {
-      return {
-        'Ingreso quincenal': '--',
-        'Gastos fijos': '--',
-        'Colchón': '--',
-        'Ahorro sobrante': '--',
-        'Ahorro mensual': '--',
-        'Ahorro anual': '--',
-      };
-    }
-
-    String f(num n) => '\$ ${n.toStringAsFixed(2)}';
-
+  if (result == null) {
     return {
-      'Ingreso quincenal': f(result.ingresoQ),
-      'Gastos fijos': f(result.gastosQ),
-      'Colchón': f(result.colchonQ),
-      'Ahorro sobrante': f(result.ahorroQ),
-      'Ahorro mensual': f(result.ahorroMensual),
-      'Ahorro anual': f(result.ahorroAnual),
+      'Ingreso quincenal': '--',
+      'Gastos fijos': '--',
+      'Colchón': '--',
+      'Ahorro sobrante': '--',
+      'Ahorro mensual': '--',
+      'Ahorro anual': '--',
     };
   }
+
+  // ahora usamos el formateador central
+  String f(num n) => MoneyFmt.mx(n);
+
+  return {
+    'Ingreso quincenal': f(result.ingresoQ),
+    'Gastos fijos': f(result.gastosQ),
+    'Colchón': f(result.colchonQ),
+    'Ahorro sobrante': f(result.ahorroQ),
+    'Ahorro mensual': f(result.ahorroMensual),
+    'Ahorro anual': f(result.ahorroAnual),
+  };
+}
+
 }
 
 class _SummaryCard extends StatelessWidget {
