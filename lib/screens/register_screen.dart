@@ -84,7 +84,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               if (!_formKey.currentState!.validate()) return;
                               setState(() => _loading = true);
 
-                              // Evita usar BuildContext tras awaits: guarda el messenger.
                               final messenger = ScaffoldMessenger.of(context);
 
                               try {
@@ -92,7 +91,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   _email.text.trim(),
                                   _password.text,
                                 );
-                                // Al cambiar el estado, go_router redirige a /home
                               } catch (e) {
                                 messenger.showSnackBar(
                                   SnackBar(content: Text('Error: $e')),
@@ -112,7 +110,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           : const Text('Crear cuenta'),
                     ),
                     const SizedBox(height: 12),
-                    // Enlace para volver a Login
+                    
                     TextButton(
                       onPressed: () => context.go('/login'),
                       child: const Text('¿Ya tienes cuenta? Inicia sesión'),

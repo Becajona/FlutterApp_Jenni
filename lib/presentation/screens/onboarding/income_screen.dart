@@ -72,7 +72,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                           final amount = double.parse(_amountCtrl.text.replaceAll(',', '.'));
                           budget.setIncome(amount, _freq);
                           setState(() => _loading = false);
-                          context.go('/onb/emergency'); // tras configurar, al panel (o al siguiente paso del onboarding)
+                          context.go('/onb/emergency'); 
                         },
                         child: _loading
                           ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))

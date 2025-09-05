@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'auth/auth_repository.dart';
-import 'presentation/controllers/budget_controller.dart'; // <- ruta corregida
+import 'presentation/controllers/budget_controller.dart'; 
 import 'app_router.dart';
 
 void main() {

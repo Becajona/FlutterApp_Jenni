@@ -15,8 +15,8 @@ class EmergencyScreen extends StatefulWidget {
 class _EmergencyScreenState extends State<EmergencyScreen> {
   final _form = GlobalKey<FormState>();
   EmergencyMode _mode = EmergencyMode.percent;
-  final _valueCtrl = TextEditingController(text: '10'); // 10% por defecto
-  final _goalCtrl  = TextEditingController(text: '3');  // meta: 3 meses
+  final _valueCtrl = TextEditingController(text: '10'); 
+  final _goalCtrl  = TextEditingController(text: '3');  
   bool _loading = false;
 
   @override
@@ -115,7 +115,7 @@ class _EmergencyScreenState extends State<EmergencyScreen> {
                               ));
 
                               setState(() => _loading = false);
-                              // siguiente paso del onboarding: (gastos) — por ahora vamos a HOME
+                             
                               context.go('/home');
                             },
                       child: _loading

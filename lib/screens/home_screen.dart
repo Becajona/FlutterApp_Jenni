@@ -16,13 +16,18 @@ class HomeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Inicio'),
         actions: [
-          // Ir a "Gastos fijos" con go_router
+          
           IconButton(
             tooltip: 'Gastos fijos',
             icon: const Icon(Icons.list_alt),
-            onPressed: () => context.push('/expenses'), // o context.go('/expenses')
+            onPressed: () => context.push('/expenses'), 
           ),
-          // Cerrar sesión
+          IconButton(
+            tooltip: 'Ajustes',
+            icon: const Icon(Icons.settings),
+            onPressed: () => context.push('/settings'),
+          ),
+          
           IconButton(
             tooltip: 'Cerrar sesión',
             icon: const Icon(Icons.logout),
@@ -30,7 +35,7 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: const DashboardScreen(), // mantiene el panel
+      body: const DashboardScreen(), 
     );
   }
 }
