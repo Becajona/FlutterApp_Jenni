@@ -5,7 +5,7 @@ import '../money/enums.dart';
 import '../domain/entities/income_config.dart';
 import '../domain/entities/emergency_config.dart';
 import '../domain/entities/expense.dart';
-import '../domain/entities/settings.dart' as app; // <<--- alias para evitar conflicto
+import '../domain/entities/settings.dart' as app; 
 
 class FirestoreService {
   final _db = FirebaseFirestore.instance;

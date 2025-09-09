@@ -65,7 +65,7 @@ class _MyAppState extends State<MyApp> {
     final router = createRouter(auth, budget);
 
     return MaterialApp.router(
-      title: 'Ahorro Quincenal',
+      title: 'Ahorraton',
       theme: ThemeData(
         colorSchemeSeed: Colors.indigo,
         useMaterial3: true,
