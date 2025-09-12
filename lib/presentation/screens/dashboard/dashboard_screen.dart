@@ -5,6 +5,9 @@ import '../../controllers/budget_controller.dart';
 import '../../../domain/services/budget_calculator.dart';
 import '../../../money/utils/formatters.dart';
 
+import 'progress_emergency_card.dart';
+import 'projection_card.dart';
+
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
@@ -101,6 +104,43 @@ class _DashboardContent extends StatelessWidget {
           'Ahorro mensual': data['Ahorro mensual']!,
           'Ahorro anual': data['Ahorro anual']!,
         }),
+        const SizedBox(height: 16),
+
+        // 👉 Aquí insertamos las nuevas tarjetas
+        LayoutBuilder(builder: (context, c) {
+          final isWide = c.maxWidth >= 900;
+          final gastosMensuales =
+              result!.gastosQ * 2; // porque tu cálculo es quincenal
+          final colchonActual = result!.colchonQ;
+
+          final emergency = ProgressEmergencyCard(
+            gastosMensuales: gastosMensuales,
+            colchonActual: colchonActual,
+            mesesObjetivoInicial: 3,
+          );
+
+          final projection = ProjectionCard(
+            ahorroMensual: result!.ahorroMensual,
+            saldoInicial: colchonActual,
+            mesesIniciales: 12,
+          );
+
+          return isWide
+              ? Row(
+                  children: [
+                    Expanded(child: emergency),
+                    const SizedBox(width: 16),
+                    Expanded(child: projection),
+                  ],
+                )
+              : Column(
+                  children: [
+                    emergency,
+                    const SizedBox(height: 16),
+                    projection,
+                  ],
+                );
+        }),
       ],
     );
   }
@@ -139,8 +179,10 @@ class _HeaderResumen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final titleStyle = theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
-    final valueStyle = theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800);
+    final titleStyle =
+        theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700);
+    final valueStyle =
+        theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800);
 
     return Card(
       elevation: 0,
@@ -240,7 +282,11 @@ class _AhorroProgress extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Tasa de ahorro', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+        Text('Tasa de ahorro',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 10),
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
@@ -394,7 +440,9 @@ class _BreakdownCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Desglose detallado', style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+            Text('Desglose detallado',
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
             ...items.map((e) {
               final isAhorro = e.key.toLowerCase().contains('ahorro sobrante');
@@ -413,7 +461,8 @@ class _BreakdownCard extends StatelessWidget {
                     Text(
                       e.value,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: isAhorro ? FontWeight.w800 : FontWeight.w600,
+                        fontWeight:
+                            isAhorro ? FontWeight.w800 : FontWeight.w600,
                         color: isAhorro ? Colors.green.shade700 : null,
                       ),
                     ),
@@ -443,17 +492,20 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.info_outline_rounded, size: 36, color: theme.colorScheme.primary),
+            Icon(Icons.info_outline_rounded,
+                size: 36, color: theme.colorScheme.primary),
             const SizedBox(height: 10),
             Text(
               'Aún no hay datos para mostrar',
-              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
               'Configura tu ingreso y gastos para ver tu panel con métricas y progreso de ahorro.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withOpacity(.8)),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurface.withOpacity(.8)),
             ),
           ],
         ),
