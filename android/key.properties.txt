@@ -1,0 +1,4 @@
+storePassword=Universidad2025#
+keyPassword=universidad2025
+keyAlias=ahorraton
+storeFile=app/ahorraton_keystore.jks

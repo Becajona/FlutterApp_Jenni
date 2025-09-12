@@ -1,9 +1,18 @@
+// android/app/build.gradle
+
 plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
-    // si usas Firebase:
+    // Si NO usas Firebase, puedes comentar la siguiente línea:
     id "com.google.gms.google-services"
+}
+
+/* ------ Carga de propiedades (debe ir DESPUÉS de plugins {}) ------ */
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
 
 def localProperties = new Properties()
@@ -14,11 +23,13 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-def flutterVersionCode = localProperties.getProperty('flutter.versionCode') ?: '1'
+// Si en local.properties no defines estas claves, usa valores por defecto:
+def flutterVersionCode = (localProperties.getProperty('flutter.versionCode') ?: '1').toInteger()
 def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0'
 
+/* ------------------------------ Android ------------------------------ */
 android {
-    namespace "com.example.app_jen"            // <-- AJÚSTALO si tu paquete es otro
+    namespace "ahorraton.com"               // 👈 cámbialo si tu paquete es otro
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
@@ -36,30 +47,48 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.app_jen"    // <-- AJÚSTALO si usas otro id
+        applicationId "ahorraton.com"       // 👈 cámbialo si usas otro id
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
-        versionCode flutterVersionCode.toInteger()
+        versionCode flutterVersionCode
         versionName flutterVersionName
+    }
+
+    /* --------- Firma RELEASE (usando key.properties si existe) --------- */
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
+        }
     }
 
     buildTypes {
         release {
-            // Firma de ejemplo para que `flutter run --release` funcione;
-            // reemplaza por tu config real cuando publiques.
+        // Usa firma release si EXISTE key.properties; si no, compila con debug para no fallar
+        if (keystorePropertiesFile.exists()) {
+            signingConfig signingConfigs.release
+        } else {
             signingConfig signingConfigs.debug
         }
+        // shrink/minify opcional...
+    }
+    debug { }
     }
 }
 
+/* Ruta del proyecto Flutter */
 flutter {
     source '../..'
 }
 
+/* Dependencias adicionales si las necesitas */
 dependencies {
-    // (Opcional) Si usas Firebase, maneja versiones con BOM:
+    // Ejemplos:
     // implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
     // implementation("com.google.firebase:firebase-analytics-ktx")
-    // implementation("com.google.firebase:firebase-messaging-ktx")
-    // ...
+    // implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }

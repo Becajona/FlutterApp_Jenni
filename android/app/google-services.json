@@ -26,9 +26,9 @@
     },
     {
       "client_info": {
-        "mobilesdk_app_id": "1:891411740361:android:752c42e5cb97acc4acbf18",
+        "mobilesdk_app_id": "1:891411740361:android:430ee3b312787c1facbf18",
         "android_client_info": {
-          "package_name": "com.example.app_jen"
+          "package_name": "ahorraton.com"
         }
       },
       "oauth_client": [],
