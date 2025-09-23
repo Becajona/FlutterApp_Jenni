@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../controllers/budget_controller.dart';
 import '../../../domain/services/budget_calculator.dart';
@@ -7,6 +8,10 @@ import '../../../money/utils/formatters.dart';
 
 import 'progress_emergency_card.dart';
 import 'projection_card.dart';
+
+import '../../widgets/charts/category_pie.dart';
+import '../../widgets/charts/emergency_progress.dart';
+import '../../widgets/charts/annual_projection.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -41,6 +46,11 @@ class _DashboardContent extends StatelessWidget {
   Widget build(BuildContext context) {
     if (result == null) return const _EmptyState();
 
+    // 👉 Dispara el aviso tras el frame, no durante el build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeNotifyGoalReached(context);
+    });
+
     final data = _formatResult(result!);
     final ahorroRate = _safeDiv(result!.ahorroQ, result!.ingresoQ);
 
@@ -53,6 +63,7 @@ class _DashboardContent extends StatelessWidget {
           ahorroRate: ahorroRate,
         ),
         const SizedBox(height: 16),
+
         _KpiGrid(
           items: [
             KpiItem(
@@ -96,6 +107,7 @@ class _DashboardContent extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
+
         _BreakdownCard(map: {
           'Ingreso quincenal': data['Ingreso quincenal']!,
           'Gastos fijos': data['Gastos fijos']!,
@@ -106,11 +118,10 @@ class _DashboardContent extends StatelessWidget {
         }),
         const SizedBox(height: 16),
 
-        // 👉 Aquí insertamos las nuevas tarjetas
+        // ---- tus tarjetas existentes (las mantenemos) ----
         LayoutBuilder(builder: (context, c) {
           final isWide = c.maxWidth >= 900;
-          final gastosMensuales =
-              result!.gastosQ * 2; // porque tu cálculo es quincenal
+          final gastosMensuales = result!.gastosQ * 2; // cálculo quincenal → mensual
           final colchonActual = result!.colchonQ;
 
           final emergency = ProgressEmergencyCard(
@@ -141,6 +152,14 @@ class _DashboardContent extends StatelessWidget {
                   ],
                 );
         }),
+
+        // ---- aquí añadimos las GRÁFICAS ----
+        const SizedBox(height: 16),
+        const EmergencyProgress(),
+        const SizedBox(height: 16),
+        const CategoryPie(),
+        const SizedBox(height: 16),
+        const AnnualProjection(),
       ],
     );
   }
@@ -283,10 +302,8 @@ class _AhorroProgress extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Tasa de ahorro',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.w700)),
+            style:
+                Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
         const SizedBox(height: 10),
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
@@ -441,8 +458,7 @@ class _BreakdownCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('Desglose detallado',
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700)),
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 12),
             ...items.map((e) {
               final isAhorro = e.key.toLowerCase().contains('ahorro sobrante');
@@ -461,8 +477,7 @@ class _BreakdownCard extends StatelessWidget {
                     Text(
                       e.value,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight:
-                            isAhorro ? FontWeight.w800 : FontWeight.w600,
+                        fontWeight: isAhorro ? FontWeight.w800 : FontWeight.w600,
                         color: isAhorro ? Colors.green.shade700 : null,
                       ),
                     ),
@@ -492,24 +507,42 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.info_outline_rounded,
-                size: 36, color: theme.colorScheme.primary),
+            Icon(Icons.info_outline_rounded, size: 36, color: theme.colorScheme.primary),
             const SizedBox(height: 10),
             Text(
               'Aún no hay datos para mostrar',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
             const SizedBox(height: 6),
             Text(
               'Configura tu ingreso y gastos para ver tu panel con métricas y progreso de ahorro.',
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withOpacity(.8)),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: theme.colorScheme.onSurface.withOpacity(.8)),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// ---------- Helper: aviso de meta de fondo alcanzada ----------
+void _maybeNotifyGoalReached(BuildContext context) {
+  final ctrl = context.read<BudgetController>();
+  final res = ctrl.calculate();
+  final emer = ctrl.emergency;
+  if (res == null || emer == null) return;
+
+  // Meta = meses objetivo * gastos mensuales (gastos quincenales * 2)
+  final gastosMensuales = res.gastosQ * 2;
+  final meta = emer.goalMonths * gastosMensuales;
+
+  // Criterio simple: si el ahorro mensual ≥ meta (placeholder hasta tener saldo acumulado real)
+  if (res.ahorroMensual >= meta) {
+    // En Web evitamos notificaciones locales; SnackBar está bien en todas las plataformas
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('🎉 ¡Meta del fondo de emergencia alcanzada!')),
     );
   }
 }

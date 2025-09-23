@@ -7,9 +7,20 @@ import '../../domain/entities/expense.dart';
 import '../../domain/entities/settings.dart';
 import '../../domain/services/budget_calculator.dart';
 
-// Para persistencia en Firebase:
+// Firebase (auth + store)
 import '../../auth/auth_repository.dart';
 import '../../data/firestore_service.dart';
+
+// Historial de quincenas
+import '../../domain/entities/period_snapshot.dart';
+
+/// Helper para id de quincena (1 = 1–15, 2 = resto)
+String currentPeriodId(DateTime now) {
+  final q = now.day <= 15 ? 1 : 2;
+  final y = now.year.toString().padLeft(4, '0');
+  final m = now.month.toString().padLeft(2, '0');
+  return '$y-$m-$q';
+}
 
 class BudgetController extends ChangeNotifier {
   // ---------- Inyección de dependencias (Auth + Firestore) ----------
@@ -34,12 +45,17 @@ class BudgetController extends ChangeNotifier {
   final List<Expense> _expenses = [];
   Settings _settings = const Settings();
 
+  // Historial en memoria (cache simple)
+  List<PeriodSnapshot> _history = [];
+  List<PeriodSnapshot> get history => List.unmodifiable(_history);
+
   // Getters
   IncomeConfig? get income => _income;
   EmergencyConfig? get emergency => _emergency;
   List<Expense> get expenses => List.unmodifiable(_expenses);
   Settings get settings => _settings;
 
+  // 👇 ESTE getter lo usa el router
   bool get hasMinimumSetup => _income != null;
   bool get isFullyConfigured => _income != null && _emergency != null;
 
@@ -56,6 +72,9 @@ class BudgetController extends ChangeNotifier {
       ..clear()
       ..addAll(await store.loadExpenses(uid));
 
+    // cargar historial
+    _history = await store.listSnapshots(uid);
+
     notifyListeners();
   }
 
@@ -64,6 +83,7 @@ class BudgetController extends ChangeNotifier {
     _emergency = null;
     _settings = const Settings();
     _expenses.clear();
+    _history = [];
     notifyListeners();
   }
 
@@ -156,5 +176,50 @@ class BudgetController extends ChangeNotifier {
       extraSavingPercent: _settings.extraSavingPercent,
       rounding: _settings.rounding,
     );
+  }
+
+  // ------------------ Historial (cierres de quincena) ------------------
+  /// Cierra la quincena actual y guarda snapshot en Firestore.
+  /// Devuelve el id del periodo cerrado.
+  Future<String?> closeCurrentPeriod() async {
+    final uid = auth.uid;
+    if (uid == null) return null;
+
+    final res = calculate();
+    if (res == null) return null;
+
+    final pid = currentPeriodId(DateTime.now());
+    final exists = await store.periodExists(uid, pid);
+    if (exists) return pid; // ya cerrado
+
+    final snap = PeriodSnapshot(
+      id: pid,
+      createdAt: DateTime.now(),
+      ingresoQ: res.ingresoQ,
+      gastosQ: res.gastosQ,
+      colchonQ: res.colchonQ,
+      ahorroQ: res.ahorroQ,
+      ahorroMensual: res.ahorroMensual,
+      extraSavingPercent: _settings.extraSavingPercent,
+      rounding: _settings.rounding,
+    );
+
+    await store.savePeriodSnapshot(uid, snap);
+    await loadHistory();
+    return pid;
+  }
+
+  Future<void> loadHistory() async {
+    final uid = auth.uid;
+    if (uid == null) return;
+    _history = await store.listSnapshots(uid);
+    notifyListeners();
+  }
+
+  Future<void> deletePeriod(String periodId) async {
+    final uid = auth.uid;
+    if (uid == null) return;
+    await store.deleteSnapshot(uid, periodId);
+    await loadHistory();
   }
 }

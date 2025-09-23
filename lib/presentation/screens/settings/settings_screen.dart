@@ -5,6 +5,7 @@ import '../../../money/enums.dart';
 import '../../../money/utils/formatters.dart';
 import '../../controllers/budget_controller.dart';
 import '../../../domain/entities/settings.dart';
+import '../../../notifications/notification_service.dart'; // ✅ para programar/cancelar recordatorios
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -19,8 +20,7 @@ class SettingsScreen extends StatelessWidget {
     final ahorroQBase = (result?.ahorroQ ?? 0).toDouble();
 
     // Helpers locales para la vista previa
-    double _applyExtra(double base, double pct) =>
-        base + (base * (pct / 100.0));
+    double _applyExtra(double base, double pct) => base + (base * (pct / 100.0));
     double _roundByMode(double n, RoundingMode m) {
       switch (m) {
         case RoundingMode.none:
@@ -36,8 +36,7 @@ class SettingsScreen extends StatelessWidget {
 
     final ahorroTrasExtra = _applyExtra(ahorroQBase, s.extraSavingPercent);
     final ahorroRedondeadoQ = _roundByMode(ahorroTrasExtra, s.rounding);
-    final ahorroMensualEstimado =
-        ahorroRedondeadoQ * 2; // quincenal → mensual aprox.
+    final ahorroMensualEstimado = ahorroRedondeadoQ * 2; // quincenal → mensual
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ajustes de ahorro')),
@@ -50,8 +49,7 @@ class SettingsScreen extends StatelessWidget {
               child: Card(
                 margin: EdgeInsets.zero,
                 elevation: 0,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
@@ -62,13 +60,10 @@ class SettingsScreen extends StatelessWidget {
                         children: [
                           CircleAvatar(
                             radius: 22,
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primaryContainer,
+                            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                             child: Icon(
                               Icons.auto_awesome_rounded,
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -85,10 +80,7 @@ class SettingsScreen extends StatelessWidget {
                                 ),
                                 Text(
                                   'Añade un porcentaje extra a tu ahorro y opcionalmente redondéalo hacia arriba.',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
+                                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                         color: Theme.of(context)
                                             .colorScheme
                                             .onSurface
@@ -125,13 +117,12 @@ class SettingsScreen extends StatelessWidget {
                         max: 50,
                         divisions: 50,
                         label: '${s.extraSavingPercent.toStringAsFixed(0)}%',
-                        onChanged: (v) =>
-                            context.read<BudgetController>().setExtraPercent(v),
+                        onChanged: (v) => context.read<BudgetController>().setExtraPercent(v),
                       ),
 
                       const SizedBox(height: 8),
 
-                      // Rounding chips
+                      // Redondeo
                       Text('Redondeo del ahorro quincenal',
                           style: Theme.of(context).textTheme.bodyMedium),
                       const SizedBox(height: 8),
@@ -141,37 +132,28 @@ class SettingsScreen extends StatelessWidget {
                           _RoundChip(
                             label: 'Sin redondeo',
                             selected: s.rounding == RoundingMode.none,
-                            onTap: () => context
-                                .read<BudgetController>()
-                                .setRounding(RoundingMode.none),
+                            onTap: () => context.read<BudgetController>().setRounding(RoundingMode.none),
                           ),
                           _RoundChip(
                             label: 'Múltiplo de \$10',
                             selected: s.rounding == RoundingMode.up10,
-                            onTap: () => context
-                                .read<BudgetController>()
-                                .setRounding(RoundingMode.up10),
+                            onTap: () => context.read<BudgetController>().setRounding(RoundingMode.up10),
                           ),
                           _RoundChip(
                             label: 'Múltiplo de \$50',
                             selected: s.rounding == RoundingMode.up50,
-                            onTap: () => context
-                                .read<BudgetController>()
-                                .setRounding(RoundingMode.up50),
+                            onTap: () => context.read<BudgetController>().setRounding(RoundingMode.up50),
                           ),
                           _RoundChip(
                             label: 'Múltiplo de \$100',
                             selected: s.rounding == RoundingMode.up100,
-                            onTap: () => context
-                                .read<BudgetController>()
-                                .setRounding(RoundingMode.up100),
+                            onTap: () => context.read<BudgetController>().setRounding(RoundingMode.up100),
                           ),
                         ],
                       ),
 
                       const SizedBox(height: 18),
 
-                      // Nota
                       Align(
                         alignment: Alignment.centerRight,
                         child: Text(
@@ -190,6 +172,84 @@ class SettingsScreen extends StatelessWidget {
                         ahorroMensual: ahorroMensualEstimado,
                       ),
 
+                      const SizedBox(height: 24),
+                      const Divider(),
+                      const SizedBox(height: 8),
+
+                      // ====== ✅ Recordatorios quincenales ======
+                      Text('Recordatorios',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 8),
+
+                      SwitchListTile(
+                        title: const Text('Recordatorios quincenales'),
+                        subtitle: const Text('Se programan el día 1 y 16 de cada mes.'),
+                        value: s.remindersEnabled,
+                        contentPadding: EdgeInsets.zero,
+                        onChanged: (v) async {
+                          await ctrl.setSettings(s.copyWith(remindersEnabled: v));
+                          await NotificationService.init();
+                          if (v) {
+                            await NotificationService.scheduleQuincenal(
+                              hour: s.reminderHour,
+                              minute: s.reminderMinute,
+                            );
+                          } else {
+                            await NotificationService.cancelAll();
+                          }
+                          if (!context.mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(v
+                                  ? 'Recordatorios activados'
+                                  : 'Recordatorios desactivados'),
+                            ),
+                          );
+                        },
+                      ),
+
+                      ListTile(
+                        title: const Text('Hora de recordatorio'),
+                        subtitle: Text(
+                          '${s.reminderHour.toString().padLeft(2, '0')}:${s.reminderMinute.toString().padLeft(2, '0')}',
+                        ),
+                        contentPadding: EdgeInsets.zero,
+                        enabled: s.remindersEnabled,
+                        onTap: !s.remindersEnabled
+                            ? null
+                            : () async {
+                                final picked = await showTimePicker(
+                                  context: context,
+                                  initialTime: TimeOfDay(
+                                    hour: s.reminderHour,
+                                    minute: s.reminderMinute,
+                                  ),
+                                );
+                                if (picked != null) {
+                                  final ns = s.copyWith(
+                                    reminderHour: picked.hour,
+                                    reminderMinute: picked.minute,
+                                  );
+                                  await ctrl.setSettings(ns);
+                                  await NotificationService.init();
+                                  await NotificationService.scheduleQuincenal(
+                                    hour: ns.reminderHour,
+                                    minute: ns.reminderMinute,
+                                  );
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Hora de recordatorio actualizada'),
+                                    ),
+                                  );
+                                }
+                              },
+                        trailing: const Icon(Icons.schedule),
+                      ),
+
                       const SizedBox(height: 16),
 
                       // Botones
@@ -198,10 +258,23 @@ class SettingsScreen extends StatelessWidget {
                           OutlinedButton.icon(
                             icon: const Icon(Icons.restore),
                             label: const Text('Restablecer'),
-                            onPressed: () {
+                            onPressed: () async {
                               final r = context.read<BudgetController>();
+                              // restablecer ahorro y redondeo
                               r.setExtraPercent(0);
                               r.setRounding(RoundingMode.none);
+                              // desactivar recordatorios y hora por defecto
+                              final ns = s.copyWith(
+                                remindersEnabled: false,
+                                reminderHour: 9,
+                                reminderMinute: 0,
+                              );
+                              await r.setSettings(ns);
+                              await NotificationService.cancelAll();
+                              if (!context.mounted) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Ajustes restablecidos')),
+                              );
                             },
                           ),
                           const Spacer(),
@@ -213,7 +286,6 @@ class SettingsScreen extends StatelessWidget {
                         ],
                       ),
 
-                      // Pequeño espacio extra para evitar rozar el borde en pantallas muy bajas
                       const SizedBox(height: 8),
                     ],
                   ),
@@ -297,8 +369,8 @@ class _PreviewPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text('Vista previa',
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w700)),
+              style:
+                  theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 8),
           _row('Ahorro base quincenal', MoneyFmt.mx(ahorroBaseQ)),
           _row('Con % extra', MoneyFmt.mx(ahorroTrasExtraQ)),
@@ -306,8 +378,7 @@ class _PreviewPanel extends StatelessWidget {
           const Divider(height: 14),
           _row('Ahorro final QUINCENAL', MoneyFmt.mx(ahorroRedondeadoQ),
               strong: true, color: Colors.green.shade700),
-          _row('Ahorro MENSUAL estimado', MoneyFmt.mx(ahorroMensual),
-              strong: true),
+          _row('Ahorro MENSUAL estimado', MoneyFmt.mx(ahorroMensual), strong: true),
         ],
       ),
     );

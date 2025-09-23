@@ -5,15 +5,20 @@ import '../money/enums.dart';
 import '../domain/entities/income_config.dart';
 import '../domain/entities/emergency_config.dart';
 import '../domain/entities/expense.dart';
-import '../domain/entities/settings.dart' as app; 
+import '../domain/entities/settings.dart' as app;
+import '../domain/entities/period_snapshot.dart';
 
 class FirestoreService {
   final _db = FirebaseFirestore.instance;
 
+  // ----- helpers -----
   DocumentReference<Map<String, dynamic>> _userRef(String uid) =>
       _db.collection('users').doc(uid);
 
-  // ----- SAVE -----
+  CollectionReference<Map<String, dynamic>> _periodsCol(String uid) =>
+      _userRef(uid).collection('periods');
+
+  // =================== SAVE ===================
   Future<void> saveIncome(String uid, IncomeConfig income) async {
     await _userRef(uid).collection('core').doc('income').set({
       'amount': income.amount,
@@ -35,6 +40,10 @@ class FirestoreService {
     await _userRef(uid).collection('core').doc('settings').set({
       'extraSavingPercent': s.extraSavingPercent,
       'rounding': s.rounding.name,
+      // 🔹 NUEVOS CAMPOS
+      'remindersEnabled': s.remindersEnabled,
+      'reminderHour': s.reminderHour,
+      'reminderMinute': s.reminderMinute,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
@@ -57,7 +66,7 @@ class FirestoreService {
     await _userRef(uid).collection('expenses').doc(id).delete();
   }
 
-  // ----- LOAD -----
+  // =================== LOAD ===================
   Future<IncomeConfig?> loadIncome(String uid) async {
     final doc = await _userRef(uid).collection('core').doc('income').get();
     if (!doc.exists) return null;
@@ -82,13 +91,8 @@ class FirestoreService {
   Future<app.Settings?> loadSettings(String uid) async {
     final doc = await _userRef(uid).collection('core').doc('settings').get();
     if (!doc.exists) return const app.Settings();
-    final d = doc.data()!;
-    return app.Settings(
-      extraSavingPercent: (d['extraSavingPercent'] ?? 0).toDouble(),
-      rounding: RoundingMode.values.firstWhere(
-        (r) => r.name == (d['rounding'] ?? RoundingMode.none.name),
-      ),
-    );
+    // ✅ Usa el fromMap nuevo que incluye recordatorios
+    return app.Settings.fromMap(doc.data()!);
   }
 
   Future<List<Expense>> loadExpenses(String uid) async {
@@ -108,5 +112,27 @@ class FirestoreService {
         isFlexible: (d['isFlexible'] ?? false) as bool,
       );
     }).toList();
+  }
+
+  // =================== PERIOD SNAPSHOTS ===================
+  Future<bool> periodExists(String uid, String periodId) async {
+    final doc = await _periodsCol(uid).doc(periodId).get();
+    return doc.exists;
+  }
+
+  Future<void> savePeriodSnapshot(String uid, PeriodSnapshot snap) async {
+    await _periodsCol(uid).doc(snap.id).set({
+      ...snap.toMap(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  Future<List<PeriodSnapshot>> listSnapshots(String uid) async {
+    final q = await _periodsCol(uid).orderBy('id', descending: true).get();
+    return q.docs.map((d) => PeriodSnapshot.fromMap(d.data())).toList();
+  }
+
+  Future<void> deleteSnapshot(String uid, String periodId) async {
+    await _periodsCol(uid).doc(periodId).delete();
   }
 }
