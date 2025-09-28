@@ -237,27 +237,47 @@ class _SocialRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    Widget btn(IconData i) => Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(
-            color: cs.surface,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: cs.outlineVariant),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(.04),
-                blurRadius: 6,
-                offset: const Offset(0, 2),
-              ),
-            ],
+    final auth = context.read<AuthRepository>();
+
+    Future<void> _handleGoogleSignIn() async {
+      try {
+        await auth.signInWithGoogle();
+        // El navegador se maneja automáticamente por el estado de autenticación
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$e'),
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
-          child: Icon(i, size: 18),
         );
+      }
+    }
+
+    Widget btn(IconData icon, {VoidCallback? onTap}) => GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: cs.outlineVariant),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(.04),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Icon(icon, size: 18),
+          ),
+        );
+
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        btn(Icons.g_mobiledata_rounded),
+        btn(Icons.g_mobiledata_rounded, onTap: _handleGoogleSignIn),
         const SizedBox(width: 12),
         btn(Icons.facebook_rounded),
         const SizedBox(width: 12),

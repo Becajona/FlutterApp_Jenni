@@ -1,16 +1,10 @@
-<!-- android/app/src/main/AndroidManifest.xml -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ahorraton.com">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-
-
-    <!-- ADDED: permite recibir el evento BOOT_COMPLETED para reprogramar notificaciones -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- (Opcional) Para Android 12+ si quisieras programar alarmas exactas constantemente:
-         <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" /> -->
 
     <application
         android:label="Ahorraton"
@@ -36,7 +30,6 @@
             </intent-filter>
         </activity>
 
-        <!-- ADDED: receiver del plugin para reprogramar notificaciones tras reinicio/actualización -->
         <receiver
             android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver"
             android:exported="false">
@@ -46,9 +39,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- No borrar: usado por Flutter -->
-        <meta-data
-            android:name="flutterEmbedding"
-            android:value="2" />
+        <meta-data android:name="flutterEmbedding" android:value="2" />
     </application>
 </manifest>

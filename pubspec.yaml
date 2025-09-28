@@ -46,6 +46,7 @@ dependencies:
   android_intent_plus: ^5.0.2
   package_info_plus: ^8.0.03
   app_settings: ^5.1.1
+  google_sign_in: ^6.1.6
 
   #flutter_native_timezone_updated: ^2.0.0
 
