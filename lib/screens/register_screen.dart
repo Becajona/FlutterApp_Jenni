@@ -57,6 +57,114 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final auth = context.read<AuthRepository>();
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    Widget registerForm() => Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Sign Up',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -.2,
+              ),
+            ),
+            const SizedBox(height: 26),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 380),
+              child: Form(
+                key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: _dec(context, 'Email',
+                          icon: Icons.alternate_email_rounded),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Ingresa tu email';
+                        final ok = RegExp(r'^\S+@\S+\.\S+$').hasMatch(v.trim());
+                        return ok ? null : 'Formato no válido';
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _password,
+                      obscureText: _obscure1,
+                      textInputAction: TextInputAction.next,
+                      decoration: _dec(
+                        context,
+                        'Password',
+                        icon: Icons.lock_rounded,
+                        suffix: IconButton(
+                          onPressed: () => setState(() => _obscure1 = !_obscure1),
+                          icon: Icon(_obscure1
+                              ? Icons.visibility_rounded
+                              : Icons.visibility_off_rounded),
+                        ),
+                      ),
+                      validator: (v) =>
+                          (v != null && v.length >= 6) ? null : 'Mínimo 6 caracteres',
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _confirm,
+                      obscureText: _obscure2,
+                      textInputAction: TextInputAction.done,
+                      decoration: _dec(
+                        context,
+                        'Confirm password',
+                        icon: Icons.lock_outline_rounded,
+                        suffix: IconButton(
+                          onPressed: () => setState(() => _obscure2 = !_obscure2),
+                          icon: Icon(_obscure2
+                              ? Icons.visibility_rounded
+                              : Icons.visibility_off_rounded),
+                        ),
+                      ),
+                      validator: (v) =>
+                          v == _password.text ? null : 'Las contraseñas no coinciden',
+                      onFieldSubmitted: (_) => _submit(auth),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Spacer(),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 220),
+                child: _GradientBtn(
+                  text: 'SIGN UP',
+                  loading: _loading,
+                  onTap: _loading ? null : () => _submit(auth),
+                ),
+              ),
+            ),
+            // Mostrar botón SIGN IN en móvil
+            if (isMobile) ...[
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => context.go('/login'),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: _kPurpleA.withOpacity(.9), width: 1.3),
+                    foregroundColor: _kPurpleA,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    backgroundColor: _kPurpleA.withOpacity(.06),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: .6),
+                  ),
+                  child: const Text('SIGN IN'),
+                ),
+              ),
+            ],
+          ],
+        );
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -70,123 +178,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 980),
+            constraints: BoxConstraints(
+              maxWidth: isMobile ? double.infinity : 980,
+            ),
             child: Card(
               elevation: 14,
               shadowColor: _kPurpleB.withOpacity(.18),
               clipBehavior: Clip.antiAlias,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-              child: SizedBox(
-                height: 540,
-                child: Row(
-                  children: [
-                    // IZQUIERDA: FORM
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(36, 36, 36, 28),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Sign Up',
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -.2,
-                              ),
+              child: isMobile
+                  ? SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 32),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.9,
+                        child: registerForm(),
+                      ),
+                    )
+                  : SizedBox(
+                      height: 540,
+                      child: Row(
+                        children: [
+                          // IZQUIERDA: FORM
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(36, 36, 36, 28),
+                              child: registerForm(),
                             ),
-                            const SizedBox(height: 26),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 380),
-                              child: Form(
-                                key: _formKey,
-                                autovalidateMode: AutovalidateMode.onUserInteraction,
-                                child: Column(
-                                  children: [
-                                    TextFormField(
-                                      controller: _email,
-                                      keyboardType: TextInputType.emailAddress,
-                                      textInputAction: TextInputAction.next,
-                                      decoration: _dec(context, 'Email',
-                                          icon: Icons.alternate_email_rounded),
-                                      validator: (v) {
-                                        if (v == null || v.trim().isEmpty) return 'Ingresa tu email';
-                                        final ok = RegExp(r'^\S+@\S+\.\S+$').hasMatch(v.trim());
-                                        return ok ? null : 'Formato no válido';
-                                      },
-                                    ),
-                                    const SizedBox(height: 12),
-                                    TextFormField(
-                                      controller: _password,
-                                      obscureText: _obscure1,
-                                      textInputAction: TextInputAction.next,
-                                      decoration: _dec(
-                                        context,
-                                        'Password',
-                                        icon: Icons.lock_rounded,
-                                        suffix: IconButton(
-                                          onPressed: () => setState(() => _obscure1 = !_obscure1),
-                                          icon: Icon(_obscure1
-                                              ? Icons.visibility_rounded
-                                              : Icons.visibility_off_rounded),
-                                        ),
-                                      ),
-                                      validator: (v) =>
-                                          (v != null && v.length >= 6) ? null : 'Mínimo 6 caracteres',
-                                    ),
-                                    const SizedBox(height: 12),
-                                    TextFormField(
-                                      controller: _confirm,
-                                      obscureText: _obscure2,
-                                      textInputAction: TextInputAction.done,
-                                      decoration: _dec(
-                                        context,
-                                        'Confirm password',
-                                        icon: Icons.lock_outline_rounded,
-                                        suffix: IconButton(
-                                          onPressed: () => setState(() => _obscure2 = !_obscure2),
-                                          icon: Icon(_obscure2
-                                              ? Icons.visibility_rounded
-                                              : Icons.visibility_off_rounded),
-                                        ),
-                                      ),
-                                      validator: (v) =>
-                                          v == _password.text ? null : 'Las contraseñas no coinciden',
-                                      onFieldSubmitted: (_) => _submit(auth),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                          ),
+                          // DERECHA: PANEL BRILLANTE
+                          SizedBox(
+                            width: 450,
+                            child: _RightPanelShiny(
+                              title: 'Welcome!',
+                              text: 'Already have an account? Sign in to continue.',
+                              ctaText: 'SIGN IN',
+                              onTap: () => context.go('/login'),
                             ),
-                            const Spacer(),
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 220),
-                                child: _GradientBtn(
-                                  text: 'SIGN UP',
-                                  loading: _loading,
-                                  onTap: _loading ? null : () => _submit(auth),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-
-                    // DERECHA: PANEL BRILLANTE (sin círculos)
-                    SizedBox(
-                      width: 450,
-                      child: _RightPanelShiny(
-                        title: 'Welcome!',
-                        text: 'Already have an account? Sign in to continue.',
-                        ctaText: 'SIGN IN',
-                        onTap: () => context.go('/login'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
         ),

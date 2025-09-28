@@ -1,10 +1,11 @@
+// lib/domain/entities/settings.dart
 import '../../money/enums.dart';
 
 class Settings {
   final double extraSavingPercent; // 0–100
   final RoundingMode rounding;
 
-  // 👉 Nuevos campos para recordatorios
+  // Nuevos campos para recordatorios
   final bool remindersEnabled;
   final int reminderHour;   // 0..23
   final int reminderMinute; // 0..59
@@ -23,15 +24,14 @@ class Settings {
     bool? remindersEnabled,
     int? reminderHour,
     int? reminderMinute,
-  }) {
-    return Settings(
-      extraSavingPercent: extraSavingPercent ?? this.extraSavingPercent,
-      rounding: rounding ?? this.rounding,
-      remindersEnabled: remindersEnabled ?? this.remindersEnabled,
-      reminderHour: reminderHour ?? this.reminderHour,
-      reminderMinute: reminderMinute ?? this.reminderMinute,
-    );
-  }
+  }) =>
+      Settings(
+        extraSavingPercent: extraSavingPercent ?? this.extraSavingPercent,
+        rounding: rounding ?? this.rounding,
+        remindersEnabled: remindersEnabled ?? this.remindersEnabled,
+        reminderHour: reminderHour ?? this.reminderHour,
+        reminderMinute: reminderMinute ?? this.reminderMinute,
+      );
 
   Map<String, dynamic> toMap() => {
         'extraSavingPercent': extraSavingPercent,
@@ -41,7 +41,7 @@ class Settings {
         'reminderMinute': reminderMinute,
       };
 
-  factory Settings.fromMap(Map<String, dynamic> m) {
+  static Settings fromMap(Map<String, dynamic> m) {
     return Settings(
       extraSavingPercent: (m['extraSavingPercent'] ?? 0).toDouble(),
       rounding: RoundingMode.values.firstWhere(

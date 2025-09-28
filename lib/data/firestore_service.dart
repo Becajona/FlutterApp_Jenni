@@ -37,16 +37,15 @@ class FirestoreService {
   }
 
   Future<void> saveSettings(String uid, app.Settings s) async {
-    await _userRef(uid).collection('core').doc('settings').set({
-      'extraSavingPercent': s.extraSavingPercent,
-      'rounding': s.rounding.name,
-      // 🔹 NUEVOS CAMPOS
-      'remindersEnabled': s.remindersEnabled,
-      'reminderHour': s.reminderHour,
-      'reminderMinute': s.reminderMinute,
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
+  await _userRef(uid).collection('core').doc('settings').set({
+    'extraSavingPercent': s.extraSavingPercent,
+    'rounding': s.rounding.name,
+    'remindersEnabled': s.remindersEnabled,
+    'reminderHour': s.reminderHour,
+    'reminderMinute': s.reminderMinute,
+    'updatedAt': FieldValue.serverTimestamp(),
+  }, SetOptions(merge: true));
+}
 
   Future<void> addExpense(String uid, Expense e) async {
     await _userRef(uid).collection('expenses').doc(e.id).set({
@@ -88,12 +87,20 @@ class FirestoreService {
     );
   }
 
-  Future<app.Settings?> loadSettings(String uid) async {
-    final doc = await _userRef(uid).collection('core').doc('settings').get();
-    if (!doc.exists) return const app.Settings();
-    // ✅ Usa el fromMap nuevo que incluye recordatorios
-    return app.Settings.fromMap(doc.data()!);
-  }
+ Future<app.Settings?> loadSettings(String uid) async {
+  final doc = await _userRef(uid).collection('core').doc('settings').get();
+  if (!doc.exists) return const app.Settings();
+  final d = doc.data()!;
+  return app.Settings(
+    extraSavingPercent: (d['extraSavingPercent'] ?? 0).toDouble(),
+    rounding: RoundingMode.values.firstWhere(
+      (r) => r.name == (d['rounding'] ?? RoundingMode.none.name),
+    ),
+    remindersEnabled: (d['remindersEnabled'] ?? false) as bool,
+    reminderHour: (d['reminderHour'] ?? 9) as int,
+    reminderMinute: (d['reminderMinute'] ?? 0) as int,
+  );
+}
 
   Future<List<Expense>> loadExpenses(String uid) async {
     final q = await _userRef(uid)

@@ -54,6 +54,104 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
     final cs = theme.colorScheme;
     final auth = context.read<AuthRepository>();
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
+    Widget loginForm() => Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Text(
+              'Sign In',
+              style: theme.textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -.2,
+              ),
+            ),
+            const SizedBox(height: 18),
+            const _SocialRow(),
+            const SizedBox(height: 10),
+            Text(
+              'or use your email password',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: cs.onSurface.withOpacity(.65),
+              ),
+            ),
+            const SizedBox(height: 18),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 380),
+              child: Form(
+                key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _email,
+                      keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
+                      decoration: _dec(context, 'Email',
+                          icon: Icons.alternate_email_rounded),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Ingresa tu email';
+                        final ok = RegExp(r'^\S+@\S+\.\S+$').hasMatch(v.trim());
+                        return ok ? null : 'Formato no válido';
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _password,
+                      obscureText: _obscure,
+                      textInputAction: TextInputAction.done,
+                      decoration: _dec(
+                        context,
+                        'Password',
+                        icon: Icons.lock_rounded,
+                        suffix: IconButton(
+                          onPressed: () => setState(() => _obscure = !_obscure),
+                          icon: Icon(_obscure
+                              ? Icons.visibility_rounded
+                              : Icons.visibility_off_rounded),
+                        ),
+                      ),
+                      validator: (v) =>
+                          (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
+                      onFieldSubmitted: (_) => _submit(auth),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Spacer(),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 220),
+                child: _GradientBtn(
+                  text: 'SIGN IN',
+                  loading: _loading,
+                  onTap: _loading ? null : () => _submit(auth),
+                ),
+              ),
+            ),
+            // Mostrar botón SIGN UP en móvil
+            if (isMobile) ...[
+              const SizedBox(height: 32),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => context.go('/register'),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: _kPurpleA.withOpacity(.9), width: 1.3),
+                    foregroundColor: _kPurpleA,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    backgroundColor: _kPurpleA.withOpacity(.06),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: .6),
+                  ),
+                  child: const Text('SIGN UP'),
+                ),
+              ),
+            ],
+          ],
+        );
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -67,116 +165,47 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 980),
+            constraints: BoxConstraints(
+              maxWidth: isMobile ? double.infinity : 980,
+            ),
             child: Card(
               elevation: 14,
               shadowColor: _kPurpleB.withOpacity(.18),
               clipBehavior: Clip.antiAlias,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-              child: SizedBox(
-                height: 540,
-                child: Row(
-                  children: [
-                    // IZQUIERDA: FORM
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(36, 36, 36, 28),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Sign In',
-                              style: theme.textTheme.headlineSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -.2,
-                              ),
+              child: isMobile
+                  ? SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 32),
+                      child: SizedBox(
+                        height: MediaQuery.of(context).size.height * 0.9,
+                        child: loginForm(),
+                      ),
+                    )
+                  : SizedBox(
+                      height: 540,
+                      child: Row(
+                        children: [
+                          // IZQUIERDA: FORM
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(36, 36, 36, 28),
+                              child: loginForm(),
                             ),
-                            const SizedBox(height: 18),
-                            const _SocialRow(),
-                            const SizedBox(height: 10),
-                            Text(
-                              'or use your email password',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: cs.onSurface.withOpacity(.65),
-                              ),
+                          ),
+                          // DERECHA: PANEL MORADO BRILLANTE (sin círculos)
+                          SizedBox(
+                            width: 450,
+                            child: _RightPanelShiny(
+                              title: 'Hello, Friend!',
+                              text:
+                                  'Register with your personal details to use all of app features.',
+                              ctaText: 'SIGN UP',
+                              onTap: () => context.go('/register'),
                             ),
-                            const SizedBox(height: 18),
-
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 380),
-                              child: Form(
-                                key: _formKey,
-                                autovalidateMode: AutovalidateMode.onUserInteraction,
-                                child: Column(
-                                  children: [
-                                    TextFormField(
-                                      controller: _email,
-                                      keyboardType: TextInputType.emailAddress,
-                                      textInputAction: TextInputAction.next,
-                                      decoration: _dec(context, 'Email',
-                                          icon: Icons.alternate_email_rounded),
-                                      validator: (v) {
-                                        if (v == null || v.trim().isEmpty) return 'Ingresa tu email';
-                                        final ok = RegExp(r'^\S+@\S+\.\S+$').hasMatch(v.trim());
-                                        return ok ? null : 'Formato no válido';
-                                      },
-                                    ),
-                                    const SizedBox(height: 12),
-                                    TextFormField(
-                                      controller: _password,
-                                      obscureText: _obscure,
-                                      textInputAction: TextInputAction.done,
-                                      decoration: _dec(
-                                        context,
-                                        'Password',
-                                        icon: Icons.lock_rounded,
-                                        suffix: IconButton(
-                                          onPressed: () => setState(() => _obscure = !_obscure),
-                                          icon: Icon(_obscure
-                                              ? Icons.visibility_rounded
-                                              : Icons.visibility_off_rounded),
-                                        ),
-                                      ),
-                                      validator: (v) =>
-                                          (v == null || v.isEmpty) ? 'Ingresa tu contraseña' : null,
-                                      onFieldSubmitted: (_) => _submit(auth),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 220),
-                                child: _GradientBtn(
-                                  text: 'SIGN IN',
-                                  loading: _loading,
-                                  onTap: _loading ? null : () => _submit(auth),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
-
-                    // DERECHA: PANEL MORADO BRILLANTE (sin círculos)
-                    SizedBox(
-                      width: 450,
-                      child: _RightPanelShiny(
-                        title: 'Hello, Friend!',
-                        text:
-                            'Register with your personal details to use all of app features.',
-                        ctaText: 'SIGN UP',
-                        onTap: () => context.go('/register'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ),
         ),
