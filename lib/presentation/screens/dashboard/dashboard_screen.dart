@@ -13,6 +13,9 @@ import '../../widgets/charts/category_pie.dart';
 import '../../widgets/charts/emergency_progress.dart';
 import '../../widgets/charts/annual_projection.dart';
 
+// 👇 Servicios para frase del día y conversión
+import '../../../data/api_exchange_service.dart';
+import '../../../data/api_quotes_service.dart';
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
@@ -38,69 +41,259 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-class _DashboardContent extends StatelessWidget {
+/* ================== CONTENIDO DEL DASHBOARD ================== */
+class _DashboardContent extends StatefulWidget {
   final BudgetResult? result;
   const _DashboardContent({required this.result});
 
   @override
+  State<_DashboardContent> createState() => _DashboardContentState();
+}
+
+class _DashboardContentState extends State<_DashboardContent> {
+  // --------- Estado para "Frase del día" + Conversión ---------
+  final List<String> _monedas = const ['USD', 'EUR', 'JPY', 'MXN'];
+  String _destCurrency = 'USD';
+  static const String _baseCurrency = 'MXN'; // cambia si tu base no es MXN
+
+  bool _loadingFrase = true;
+  String? _fraseEs;
+  double? _ahorroConvertido;
+  String? _errorFrase;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadQuoteAndRates();
+  }
+
+  Future<void> _loadQuoteAndRates() async {
+    setState(() {
+      _loadingFrase = true;
+      _errorFrase = null;
+    });
+
+    try {
+      // 1) Frase del día (tu servicio ya la devuelve en español)
+      final frase = await QuotesService.getRandomQuote();
+
+      // 2) Conversión del ahorro quincenal (ajústalo si quieres otro monto)
+      final ahorroLocal = widget.result?.ahorroQ ?? 0.0;
+      final converted = await ExchangeService.convert(
+        ahorroLocal,
+        _baseCurrency,
+        _destCurrency,
+      );
+
+      setState(() {
+        _fraseEs = frase;
+        _ahorroConvertido = converted; // puede venir null si falla la API
+        _loadingFrase = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorFrase = 'No se pudo cargar la información.';
+        _loadingFrase = false;
+      });
+    }
+  }
+
+  String _formatMonto(double v, String currency) {
+    return '${v.toStringAsFixed(2)} $currency';
+  }
+
+  // ------- Tarjeta integrada (antes estaba en DashboardExtraPanel) -------
+  Widget _buildQuoteCard(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 6),
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Encabezado
+            Row(
+              children: [
+                const Icon(Icons.chat_bubble_outline, size: 18),
+                const SizedBox(width: 8),
+                Text('Frase del día',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const Spacer(),
+                IconButton(
+                  tooltip: 'Actualizar',
+                  icon: const Icon(Icons.refresh),
+                  onPressed: _loadingFrase ? null : _loadQuoteAndRates,
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            // Frase / estados
+            if (_loadingFrase) ...[
+              const SizedBox(height: 6),
+              const Center(
+                child: SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ] else if (_errorFrase != null) ...[
+              Text(
+                _errorFrase!,
+                style: TextStyle(color: cs.error),
+                textAlign: TextAlign.center,
+              ),
+              TextButton.icon(
+                onPressed: _loadQuoteAndRates,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+              ),
+            ] else ...[
+              Text(
+                _fraseEs ?? '',
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontStyle: FontStyle.italic),
+              ),
+            ],
+
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Divider(height: 1),
+            ),
+
+            // Fila: selector de moneda + título
+            Row(
+              children: [
+                Text(
+                  'Tu ahorro en:',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _destCurrency,
+                  items: _monedas
+                      .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                      .toList(),
+                  onChanged: (m) async {
+                    if (m == null) return;
+                    setState(() => _destCurrency = m);
+                    await _loadQuoteAndRates();
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 6),
+
+            // Resultado / loading
+            if (_loadingFrase) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Calculando...',
+                style: TextStyle(
+                  color: cs.primary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ] else if (_ahorroConvertido == null) ...[
+              const Text(
+                'No disponible por ahora',
+                textAlign: TextAlign.center,
+              ),
+              TextButton.icon(
+                onPressed: _loadQuoteAndRates,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Reintentar'),
+              ),
+            ] else ...[
+              Text(
+                _formatMonto(_ahorroConvertido!, _destCurrency),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --------------------- UI principal ---------------------
+  @override
   Widget build(BuildContext context) {
-    if (result == null) return const _EmptyState();
+    if (widget.result == null) return const _EmptyState();
 
     // 👉 Dispara el aviso tras el frame, no durante el build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeNotifyGoalReached(context);
     });
 
-    final data = _formatResult(result!);
-    final ahorroRate = _safeDiv(result!.ahorroQ, result!.ingresoQ);
+    final data = _formatResult(widget.result!);
+    final ahorroRate = _safeDiv(widget.result!.ahorroQ, widget.result!.ingresoQ);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _HeaderResumen(
-          ingresoQ: result!.ingresoQ,
-          ahorroQ: result!.ahorroQ,
+          ingresoQ: widget.result!.ingresoQ,
+          ahorroQ: widget.result!.ahorroQ,
           ahorroRate: ahorroRate,
         ),
+        const SizedBox(height: 16),
+
+        // 👇 NUEVA tarjeta integrada (frase + conversión)
+        _buildQuoteCard(context),
+
         const SizedBox(height: 16),
 
         _KpiGrid(
           items: [
             KpiItem(
               label: 'Ingreso quincenal',
-              value: MoneyFmt.mx(result!.ingresoQ),
+              value: MoneyFmt.mx(widget.result!.ingresoQ),
               icon: Icons.account_balance_wallet_rounded,
               color: Colors.indigo,
               emphasis: KpiEmphasis.primary,
             ),
             KpiItem(
               label: 'Gastos fijos',
-              value: MoneyFmt.mx(result!.gastosQ),
+              value: MoneyFmt.mx(widget.result!.gastosQ),
               icon: Icons.receipt_long_rounded,
               color: Colors.deepOrange,
             ),
             KpiItem(
               label: 'Colchón',
-              value: MoneyFmt.mx(result!.colchonQ),
+              value: MoneyFmt.mx(widget.result!.colchonQ),
               icon: Icons.savings_rounded,
               color: Colors.teal,
             ),
             KpiItem(
               label: 'Ahorro sobrante',
-              value: MoneyFmt.mx(result!.ahorroQ),
+              value: MoneyFmt.mx(widget.result!.ahorroQ),
               icon: Icons.trending_up_rounded,
               color: Colors.green,
               emphasis: KpiEmphasis.positive,
             ),
             KpiItem(
               label: 'Ahorro mensual',
-              value: MoneyFmt.mx(result!.ahorroMensual),
+              value: MoneyFmt.mx(widget.result!.ahorroMensual),
               icon: Icons.calendar_month_rounded,
               color: Colors.blueGrey,
             ),
             KpiItem(
               label: 'Ahorro anual',
-              value: MoneyFmt.mx(result!.ahorroAnual),
+              value: MoneyFmt.mx(widget.result!.ahorroAnual),
               icon: Icons.timeline_rounded,
               color: Colors.purple,
             ),
@@ -121,8 +314,8 @@ class _DashboardContent extends StatelessWidget {
         // ---- tus tarjetas existentes (las mantenemos) ----
         LayoutBuilder(builder: (context, c) {
           final isWide = c.maxWidth >= 900;
-          final gastosMensuales = result!.gastosQ * 2; // cálculo quincenal → mensual
-          final colchonActual = result!.colchonQ;
+          final gastosMensuales = widget.result!.gastosQ * 2; // quincenal → mensual
+          final colchonActual = widget.result!.colchonQ;
 
           final emergency = ProgressEmergencyCard(
             gastosMensuales: gastosMensuales,
@@ -131,7 +324,7 @@ class _DashboardContent extends StatelessWidget {
           );
 
           final projection = ProjectionCard(
-            ahorroMensual: result!.ahorroMensual,
+            ahorroMensual: widget.result!.ahorroMensual,
             saldoInicial: colchonActual,
             mesesIniciales: 12,
           );
@@ -153,7 +346,7 @@ class _DashboardContent extends StatelessWidget {
                 );
         }),
 
-        // ---- aquí añadimos las GRÁFICAS ----
+        // ---- GRÁFICAS ----
         const SizedBox(height: 16),
         const EmergencyProgress(),
         const SizedBox(height: 16),
@@ -163,24 +356,26 @@ class _DashboardContent extends StatelessWidget {
       ],
     );
   }
+}
 
-  static Map<String, String> _formatResult(BudgetResult r) {
-    String f(num n) => MoneyFmt.mx(n);
-    return {
-      'Ingreso quincenal': f(r.ingresoQ),
-      'Gastos fijos': f(r.gastosQ),
-      'Colchón': f(r.colchonQ),
-      'Ahorro sobrante': f(r.ahorroQ),
-      'Ahorro mensual': f(r.ahorroMensual),
-      'Ahorro anual': f(r.ahorroAnual),
-    };
-  }
+/* ================== HELPERS / WIDGETS AL NIVEL SUPERIOR ================== */
 
-  static double _safeDiv(num a, num b) {
-    if (b == 0) return 0;
-    final v = a / b;
-    return v.isNaN || v.isInfinite ? 0 : v.toDouble();
-  }
+Map<String, String> _formatResult(BudgetResult r) {
+  String f(num n) => MoneyFmt.mx(n);
+  return {
+    'Ingreso quincenal': f(r.ingresoQ),
+    'Gastos fijos': f(r.gastosQ),
+    'Colchón': f(r.colchonQ),
+    'Ahorro sobrante': f(r.ahorroQ),
+    'Ahorro mensual': f(r.ahorroMensual),
+    'Ahorro anual': f(r.ahorroAnual),
+  };
+}
+
+double _safeDiv(num a, num b) {
+  if (b == 0) return 0;
+  final v = a / b;
+  return v.isNaN || v.isInfinite ? 0 : v.toDouble();
 }
 
 /// Encabezado con resumen y barra de progreso
@@ -527,7 +722,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-/// ---------- Helper: aviso de meta de fondo alcanzada ----------
+/* ---------- Aviso de meta de fondo alcanzada ---------- */
 void _maybeNotifyGoalReached(BuildContext context) {
   final ctrl = context.read<BudgetController>();
   final res = ctrl.calculate();
@@ -540,7 +735,6 @@ void _maybeNotifyGoalReached(BuildContext context) {
 
   // Criterio simple: si el ahorro mensual ≥ meta (placeholder hasta tener saldo acumulado real)
   if (res.ahorroMensual >= meta) {
-    // En Web evitamos notificaciones locales; SnackBar está bien en todas las plataformas
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('🎉 ¡Meta del fondo de emergencia alcanzada!')),
     );

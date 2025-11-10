@@ -7,6 +7,9 @@ import '../auth/auth_repository.dart';
 import '../presentation/controllers/budget_controller.dart';
 import '../presentation/screens/dashboard/dashboard_screen.dart';
 
+// Panel extra (frase + conversión USD)
+import '../presentation/widgets/dashboard_extra_panel.dart';
+
 // Paquete para abrir la pantalla de ajustes de la app
 import 'package:app_settings/app_settings.dart';
 
@@ -23,6 +26,10 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthRepository>();
+    final budget = context.watch<BudgetController>();
+    final result = budget.calculate();
+    // Tomamos el ahorro base (ajusta si tu modelo usa otro campo)
+    final ahorroTotalLocal = (result?.ahorroQ ?? 0).toDouble();
 
     return Scaffold(
       appBar: AppBar(
@@ -73,9 +80,15 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: Column(
         children: [
-          if (_showPermissionCard) _PermissionHelpCard(onClose: () {
-            setState(() => _showPermissionCard = false);
-          }),
+          if (_showPermissionCard)
+            _PermissionHelpCard(onClose: () {
+              setState(() => _showPermissionCard = false);
+            }),
+
+          // 🔥 NUEVO: panel con frase motivacional + ahorro convertido a USD
+          // Pásale el total de ahorro estimado en tu moneda local (ej. MXN)
+         
+          // Tu dashboard de siempre
           const Expanded(child: DashboardScreen()),
         ],
       ),

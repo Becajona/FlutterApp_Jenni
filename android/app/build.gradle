@@ -4,11 +4,9 @@ plugins {
     id "com.android.application"
     id "org.jetbrains.kotlin.android"
     id "dev.flutter.flutter-gradle-plugin"
-    // Si NO usas Firebase, puedes comentar la siguiente línea:
     id "com.google.gms.google-services"
 }
 
-/* ------ Carga de propiedades (debe ir DESPUÉS de plugins {}) ------ */
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
@@ -23,21 +21,19 @@ if (localPropertiesFile.exists()) {
     }
 }
 
-// Si en local.properties no defines estas claves, usa valores por defecto:
 def flutterVersionCode = (localProperties.getProperty('flutter.versionCode') ?: '1').toInteger()
 def flutterVersionName = localProperties.getProperty('flutter.versionName') ?: '1.0'
 
 /* ------------------------------ Android ------------------------------ */
 android {
-    namespace "ahorraton.com"               // 👈 cámbialo si tu paquete es otro
+    namespace "ahorraton.com"               
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion flutter.ndkVersion
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-        coreLibraryDesugaringEnabled true    // <--- importante
-
+        coreLibraryDesugaringEnabled true
     }
 
     kotlinOptions {
@@ -49,46 +45,39 @@ android {
     }
 
     defaultConfig {
-        applicationId "ahorraton.com"       // 👈 cámbialo si usas otro id
+        applicationId "ahorraton.com"       
         minSdkVersion flutter.minSdkVersion
         targetSdkVersion flutter.targetSdkVersion
         versionCode flutterVersionCode
         versionName flutterVersionName
     }
 
-    /* --------- Firma RELEASE (usando key.properties si existe) --------- */
     signingConfigs {
         release {
-            if (keystorePropertiesFile.exists()) {
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
+            if (!keystorePropertiesFile.exists()) {
+                throw new RuntimeException("Falta key.properties para firmar release. Crea el keystore y key.properties.")
+
             }
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+            storePassword keystoreProperties['storePassword']
         }
     }
 
     buildTypes {
         release {
-        // Usa firma release si EXISTE key.properties; si no, compila con debug para no fallar
-        if (keystorePropertiesFile.exists()) {
             signingConfig signingConfigs.release
-        } else {
-            signingConfig signingConfigs.debug
         }
-        // shrink/minify opcional...
-    }
-    debug { }
+        debug { }
     }
 }
 
-/* Ruta del proyecto Flutter */
 flutter {
     source '../..'
 }
 
-/* Dependencias adicionales si las necesitas */
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.25" // o tu versión
-    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"  // <--- agrega esto
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:1.9.25" 
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"
 }
