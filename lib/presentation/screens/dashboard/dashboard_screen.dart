@@ -13,7 +13,6 @@ import '../../widgets/charts/category_pie.dart';
 import '../../widgets/charts/emergency_progress.dart';
 import '../../widgets/charts/annual_projection.dart';
 
-// 👇 Servicios para frase del día y conversión
 import '../../../data/api_exchange_service.dart';
 import '../../../data/api_quotes_service.dart';
 class DashboardScreen extends StatelessWidget {

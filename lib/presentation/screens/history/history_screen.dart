@@ -45,6 +45,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const BackButton(),
         centerTitle: true,
         title: const Text('Historial'),
         elevation: 0,

@@ -7,10 +7,7 @@ import '../auth/auth_repository.dart';
 import '../presentation/controllers/budget_controller.dart';
 import '../presentation/screens/dashboard/dashboard_screen.dart';
 
-// Panel extra (frase + conversión USD)
-import '../presentation/widgets/dashboard_extra_panel.dart';
-
-// Paquete para abrir la pantalla de ajustes de la app
+// Abrir ajustes de la app (notificaciones/batería)
 import 'package:app_settings/app_settings.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -23,61 +20,90 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _showPermissionCard = true;
 
+  /// Índice del BottomNav (Inicio = 0)
+  int _currentIndex = 0;
+
+  /// Navegar según el tab seleccionado.
+  /// - Inicio usa go() para evitar apilar rutas.
+  /// - Otras pestañas usan push() para que el botón Atrás regrese a Inicio.
+  void _onBottomTap(int i) {
+    if (i == _currentIndex) return;
+    setState(() => _currentIndex = i);
+
+    switch (i) {
+      case 0:
+        context.go('/home');       // reemplaza la ruta → no apila
+        break;
+      case 1:
+        context.push('/simulator'); // apila → BackButton regresa a /home
+        break;
+      case 2:
+        context.push('/history');
+        break;
+      case 3:
+        context.push('/settings');
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.read<AuthRepository>();
-    final budget = context.watch<BudgetController>();
-    final result = budget.calculate();
-    // Tomamos el ahorro base (ajusta si tu modelo usa otro campo)
-    final ahorroTotalLocal = (result?.ahorroQ ?? 0).toDouble();
+    final ctrl = context.read<BudgetController>();
 
     return Scaffold(
+      // APP BAR
       appBar: AppBar(
-        title: const Text('Inicio'),
-        actions: [
-          IconButton(
-            tooltip: 'Gastos fijos',
-            icon: const Icon(Icons.list_alt),
-            onPressed: () => context.push('/expenses'),
-          ),
-          IconButton(
-            tooltip: 'Ajustes',
-            icon: const Icon(Icons.settings),
-            onPressed: () => context.push('/settings'),
-          ),
-          IconButton(
-            tooltip: 'Simulador',
-            icon: const Icon(Icons.auto_graph),
-            onPressed: () => context.push('/simulator'),
-          ),
-          IconButton(
-            tooltip: 'Historial',
-            icon: const Icon(Icons.history),
-            onPressed: () => context.push('/history'),
-          ),
-          IconButton(
-            tooltip: 'Cerrar quincena',
-            icon: const Icon(Icons.task_alt),
-            onPressed: () async {
-              final ctrl = context.read<BudgetController>();
-              final pid = await ctrl.closeCurrentPeriod();
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    pid == null ? 'No se pudo cerrar' : 'Quincena $pid cerrada',
-                  ),
-                ),
-              );
-            },
-          ),
-          IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.logout),
-            onPressed: auth.signOut,
-          ),
-        ],
+        title: const Text('Ahorratón'),
       ),
+
+      // DRAWER
+      drawer: Drawer(
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            children: [
+              // Cabecera opcional con logo/usuario aquí
+
+              ListTile(
+                leading: const Icon(Icons.account_balance_wallet_outlined),
+                title: const Text('Gastos fijos'),
+                onTap: () {
+                  Navigator.of(context).pop(); // cierra drawer
+                  context.push('/expenses');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.task_alt_outlined),
+                title: const Text('Quincena Cerrada'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  final pid = await ctrl.closeCurrentPeriod();
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        pid == null ? 'No se pudo cerrar' : 'Quincena $pid cerrada',
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const Divider(height: 16),
+              ListTile(
+                leading: const Icon(Icons.logout),
+                title: const Text('Cerrar sesión'),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await auth.signOut();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+
+      // BODY (Inicio)
       body: Column(
         children: [
           if (_showPermissionCard)
@@ -85,11 +111,36 @@ class _HomeScreenState extends State<HomeScreen> {
               setState(() => _showPermissionCard = false);
             }),
 
-          // 🔥 NUEVO: panel con frase motivacional + ahorro convertido a USD
-          // Pásale el total de ahorro estimado en tu moneda local (ej. MXN)
-         
           // Tu dashboard de siempre
           const Expanded(child: DashboardScreen()),
+        ],
+      ),
+
+      // BOTTOM NAV
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: _onBottomTap,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'Inicio',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.auto_graph_outlined),
+            selectedIcon: Icon(Icons.auto_graph),
+            label: 'Simulador',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.article_outlined),
+            selectedIcon: Icon(Icons.article),
+            label: 'Historial',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
+            label: 'Ajustes de ahorro',
+          ),
         ],
       ),
     );
@@ -119,10 +170,7 @@ class _PermissionHelpCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: onClose,
-                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: onClose),
               ],
             ),
             const SizedBox(height: 8),

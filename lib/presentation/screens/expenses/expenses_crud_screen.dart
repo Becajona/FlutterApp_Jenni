@@ -21,6 +21,8 @@ class ExpensesCrudScreen extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        leading: const BackButton(),
+
         elevation: 0,
         backgroundColor: Colors.transparent,
         centerTitle: true,
