@@ -1,4 +1,4 @@
-# app_jen
+# app_jen Ahorraton app
 
 A new Flutter project.
 
