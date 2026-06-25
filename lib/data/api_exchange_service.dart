@@ -3,9 +3,6 @@ import 'dart:io';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 
-/// Convierte montos de una moneda a otra usando:
-/// 1) exchangerate.host (con access_key si la tienes)
-/// 2) fallback a Frankfurter (sin clave) si hay error/timeout
 class ExchangeService {
   static const String _exHost = 'api.exchangerate.host';
   static const String _frankHost = 'api.frankfurter.app';

@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <string name="app_name">Ahorraton</string>
-    <string name="server_client_id">891411740361-3vbjud782o9urf9vls0gtfp08m7k5ts4.apps.googleusercontent.com
-</string>
+
+    <!-- Google Sign-In (OAUTH 2.0 CLIENT ID) -->
+    <string name="server_client_id">
+        891411740361-3vbjud782o9urf9vls0gtfp08m7k5ts4.apps.googleusercontent.com
+    </string>
+
+    <!-- Facebook Login -->
+    <string name="facebook_app_id">1532661957883266</string>
+    <string name="facebook_client_token">80a22c10460ca27669b877c26a6eddaa</string>
+
+    <!-- Es MUY importante: el scheme debe iniciar con "fb" -->
+    <string name="fb_login_protocol_scheme">fb1532661957883266</string>
+
 </resources>

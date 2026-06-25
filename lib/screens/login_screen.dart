@@ -1,4 +1,4 @@
-// lib/src/login/login_screen.dart
+// lib/src/login/login_screen.dart 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
@@ -81,12 +81,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Text(
+                      const Text(
                         'Inicia sesión para continuar',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
-                          color: const Color(0xFF6B7280),
+                          color: Color(0xFF6B7280),
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -177,10 +177,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 16),
 
                       // Divider "O inicia sesión con"
-                      Row(
-                        children: const [
+                      const Row(
+                        children: [
                           Expanded(
-                            child: Divider(color: Color(0xFFE5E7EB), thickness: 1),
+                            child: Divider(
+                                color: Color(0xFFE5E7EB), thickness: 1),
                           ),
                           Padding(
                             padding: EdgeInsets.symmetric(horizontal: 10),
@@ -193,18 +194,20 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           Expanded(
-                            child: Divider(color: Color(0xFFE5E7EB), thickness: 1),
+                            child: Divider(
+                                color: Color(0xFFE5E7EB), thickness: 1),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
 
-                      // Botón Google (borde gris + icono a la izquierda)
+                      // Botón Google
                       SizedBox(
                         width: double.infinity,
                         height: 50,
                         child: OutlinedButton(
-                          onPressed: _loading ? null : () => _handleGoogle(auth),
+                          onPressed:
+                              _loading ? null : () => _handleGoogle(auth),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: Color(0xFFE5E7EB)),
                             shape: RoundedRectangleBorder(
@@ -231,6 +234,33 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
 
+                      const SizedBox(height: 10),
+
+                      // Botón Facebook (debajo de Google)
+                      SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton.icon(
+                          onPressed:
+                              _loading ? null : () => _handleFacebook(auth),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                const Color(0xFF1877F2), // Azul Facebook
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            textStyle: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            elevation: 0,
+                          ),
+                          icon: const Icon(Icons.facebook),
+                          label: const Text('Continuar con Facebook'),
+                        ),
+                      ),
+
                       const SizedBox(height: 18),
 
                       // Enlace registro
@@ -248,7 +278,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             onTap: () => context.go('/register'),
                             borderRadius: BorderRadius.circular(4),
                             child: const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 2, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 2, vertical: 4),
                               child: Text(
                                 'Regístrate',
                                 style: TextStyle(
@@ -297,7 +328,8 @@ class _LoginScreenState extends State<LoginScreen> {
         suffixIcon: suffix,
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Color(0xFFE5E7EB)),
@@ -342,6 +374,24 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error con Google: $e'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _handleFacebook(AuthRepository auth) async {
+    setState(() => _loading = true);
+    try {
+      // 👉 Este método debe existir en tu AuthRepository
+      await auth.signInWithFacebook();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error con Facebook: $e'),
           behavior: SnackBarBehavior.floating,
         ),
       );

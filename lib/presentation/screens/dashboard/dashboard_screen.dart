@@ -15,6 +15,8 @@ import '../../widgets/charts/annual_projection.dart';
 
 import '../../../data/api_exchange_service.dart';
 import '../../../data/api_quotes_service.dart';
+
+
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
@@ -23,16 +25,14 @@ class DashboardScreen extends StatelessWidget {
     final ctrl = context.watch<BudgetController>();
     final result = ctrl.calculate();
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Panel')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 980),
-              child: _DashboardContent(result: result),
-            ),
+    // 👇 Ya NO usamos Scaffold ni AppBar aquí
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 980),
+            child: _DashboardContent(result: result),
           ),
         ),
       ),
@@ -352,6 +352,18 @@ class _DashboardContentState extends State<_DashboardContent> {
         const CategoryPie(),
         const SizedBox(height: 16),
         const AnnualProjection(),
+        // 👇👇👇 AGREGA ESTO AQUÍ 👇👇👇
+    const SizedBox(height: 24),
+    Center(
+      child: Text(
+        '© 2025 Ahorratón – Desarrollado por Jonathan Vega',
+        style: TextStyle(
+          fontSize: 12,
+          color: Colors.grey,
+        ),
+      ),
+    ),
+    const SizedBox(height: 24),
       ],
     );
   }
@@ -559,6 +571,7 @@ class KpiItem {
   });
 }
 
+
 class _KpiCard extends StatelessWidget {
   final KpiItem item;
   const _KpiCard({required this.item});
@@ -633,6 +646,7 @@ class _SoftIcon extends StatelessWidget {
   }
 }
 
+
 /// Desglose en filas
 class _BreakdownCard extends StatelessWidget {
   final Map<String, String> map;
@@ -685,6 +699,7 @@ class _BreakdownCard extends StatelessWidget {
       ),
     );
   }
+  
 }
 
 class _EmptyState extends StatelessWidget {
@@ -721,6 +736,7 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
+
 /* ---------- Aviso de meta de fondo alcanzada ---------- */
 void _maybeNotifyGoalReached(BuildContext context) {
   final ctrl = context.read<BudgetController>();
@@ -739,3 +755,4 @@ void _maybeNotifyGoalReached(BuildContext context) {
     );
   }
 }
+
